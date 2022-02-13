@@ -231,7 +231,7 @@ def simaction(threads, driver, service, options, uri, users, courses, password):
         username, course = generate(users, courses)
         login(uri, driver, username, password)
         driver.implicitly_wait(5)
-        rngaction = random.choice(list(range(1,4)))
+        rngaction = random.choice([1,2,3,4,4,3,4,4,3,4,3,3,2,1])
         #rngaction = 4
         print("RNG action " + str(rngaction))
         if (rngaction == 1):
