@@ -7,30 +7,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-options = Options()
-options.add_argument('--headless')
-
-service = Service(ChromeDriverManager().install())
-
-
-uri = "http://192.168.122.61/index.php"
-
-users = json.loads(open("usernames.json").read())
-courses = json.loads(open("courses.json").read())
-password = "Kenyon5%"
-
-def generate():
+def generate(users, courses):
     """
     Generate a set of actions
-    """
-    username = random.choice(users)
-    course = random.choice(courses)
-    return username,course
-
-
-def simulatelogin():
-    """
-    Main execution
 
     Parameters
     ----------
@@ -38,15 +17,36 @@ def simulatelogin():
 
     Return
     ------
+    String, String
+    Two strings with a random username and a random course
+    """
+    username = random.choice(users)
+    course = random.choice(courses)
+    return username,course
+
+
+def login(uri, driver, username, password):
+    """
+    Login function
+
+    Parameters
+    ----------
+    uri : string
+        The host URI
+    driver : Selenium webdriver
+        A webdriver object to control browser with
+    username : string
+        A username string
+    password : string
+        The user's password
+
+    Return
+    ------
     None
 
     """
-    print("Initialized thread")
-    print("Initializing driver")
-    driver = webdriver.Chrome(service = service, options = options)
-    driver.implicitly_wait(5)
+    driver.implicitly_wait(3)
     driver.get(uri)
-    username, course = generate()
     LoginXpath = '//*[@id="page-wrapper"]/nav/ul[2]/li[2]/div/span/a'
     driver.find_element(By.XPATH, LoginXpath).click()
     driver.find_element(By.ID, "username").send_keys(username)
@@ -55,32 +55,168 @@ def simulatelogin():
     try:
         NextXpath = '/html/body/span/div/div/div[4]/button[3]'
         driver.find_element(By.XPATH, NextXpath).click()
+        print("Tutorial modal found and dismissed")
     except:
         print("No tutorial modal")
-    rngaction = random.choice(list(range(1, 3)))
-    if (rngaction == 1):
-        CourseXpath = course
-        driver.find_element(By.XPATH, CourseXpath).click()
-    elif (rngaction == 2):
-        CourseXpath = course
-        driver.find_element(By.XPATH, CourseXpath).click()
-    else:
-        CourseXpath = course
-        driver.find_element(By.XPATH, CourseXpath).click()
-    driver.quit()
+
+def logout(uri, driver):
+    """
+    Logout function
+
+    Parameters
+    ----------
+    uri : string
+        The host URI
+
+    Return
+    ------
+    None
+    """
+    print("Logging out user")
+    UsermenuXpath = "//a[contains(@aria-label, 'User menu')]"
+    driver.find_element(By.XPATH, UsermenuXpath).click()
+    LogoutXpath = "//a[contains(@href, 'logout.php')]"
+    driver.find_element(By.XPATH, LogoutXpath).click()
+
+def rng1(driver, course):
+    """
+    Accesses a course passed in
+
+    Parameters
+    ----------
+    driver : Selenium webdriver
+        A webdriver object to control browser with
+    course : string
+        A course string
+
+    Return
+    ------
+    None
+
+    """
+    print("RNG 1: Access course")
+    CourseXpath = "//a[contains(@href, 'course/view.php?id=" + course + "')]"
+    driver.find_element(By.XPATH, CourseXpath).click()
+    try:
+        TutorialXpath = "/html/body/span/div/div/div[4]/button[3]"
+        driver.find_element(By.XPATH, TutorialXpath).click()
+        print("Course tutorial modal found and dismissed")
+    except:
+        print("No tutorial modal")
+
+def rng2(driver, uri):
+    """
+    Accesses a random user's profile (ID between 2, 1000)
+
+    Parameters
+    ----------
+    driver : Selenium webdriver
+        A webdriver object to control browser with
+    uri : string
+        The host URI
+
+    Return
+    ------
+    None
+
+    """
+    print("RNG 2: Access user")
+    userid = str(random.choice(range(2, 1000)))
+    driver.get(uri + "/user/view.php?id=" + userid)
+    try:
+        TutorialXpath = "/html/body/span/div/div/div[4]/button[3]"
+        driver.find_element(By.XPATH, TutorialXpath).click()
+        print("Course tutorial modal found and dismissed")
+    except:
+        print("No tutorial modal")
+
+def rng3(driver, uri, course):
+    """
+    Accesses a random user's profile (ID between 2, 1000) also enrolled in course
+
+    Parameters
+    ----------
+    driver : Selenium webdriver
+        A webdriver object to control browser with
+    uri : string
+        The host URI
+    course : string
+        A course string
+
+    Return
+    ------
+    None
+
+    """
+    print("RNG 3: Access user in course")
+    userid = str(random.choice(range(2, 1000)))
+    driver.get(uri + "/user/view.php?id=" + userid + "&course=" + course)
+    try:
+        TutorialXpath = "/html/body/span/div/div/div[4]/button[3]"
+        driver.find_element(By.XPATH, TutorialXpath).click()
+        print("Course tutorial modal found and dismissed")
+    except:
+        print("No tutorial modal")
+
+def simaction(threads, driver, service, options, uri, users, courses, password):
+    try:
+        print("Generating random username and course")
+        username, course = generate(users, courses)
+        login(uri, driver, username, password)
+        driver.implicitly_wait(5)
+        rngaction = random.choice(list(range(1, 3)))
+        #rngaction = 3
+        print("RNG action" + str(rngaction))
+        if (rngaction == 1):
+            rng1(driver, course)
+        elif (rngaction == 2):
+            rng2(driver, uri)
+        else:
+            rng3(driver, uri, course)
+        logout(uri, driver)
+        print("Destroying driver")
+        driver.quit()
+        print("Driver destroyed")
+    except:
+        print("Destroying driver")
+        driver.quit()
+        print("Driver destroyed")
 
 def main():
+    print("Initializing options")
+    options = Options()
+    #print("Adding options: headless")
+    #options.add_argument('--headless')
+    print("Creating service")
+    service = Service(ChromeDriverManager().install())
+    uri = "http://192.168.122.61"
+    print("Set URI to" + uri)
+    print("Creating users list from usernames.json")
+    users = json.loads(open("usernames.json").read())
+    print("Creating courses list from courses.json")
+    courses = json.loads(open("courses.json").read())
+    print("Setting global user password")
+    password = "Kenyon5%"
     while True:
         print("Initializing threads")
-        numthreads = 10
+        numthreads = 5
         threads = []
+        drivers = []
         for i in range(numthreads):
-            t = threading.Thread(target = simulatelogin)
+            print("Initializing driver " + str(i))
+            drivers.append(webdriver.Chrome(service = service, options = options))
+            print("Initialized driver " + str(i))
+        print("Initialized thread environment")
+        for i in range(numthreads):
+            t = threading.Thread(target = simaction, args = (numthreads, drivers[i], service, options, uri, users, courses, password))
+            print("Initialized thread")
             t.daemon = True
             threads.append(t)
         for i in range(numthreads):
+            print("Starting threads")
             threads[i].start()
         for i in range(numthreads):
+            print("Joining threads")
             threads[i].join()
 
 
