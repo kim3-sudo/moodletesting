@@ -256,8 +256,8 @@ def simaction(threads, driver, service, options, uri, users, courses, password):
 def main():
     print("Initializing options")
     options = Options()
-    #print("Adding options: headless")
-    #options.add_argument('--headless')
+    print("Adding options: headless")
+    options.add_argument('--headless')
     print("Creating service")
     service = Service(ChromeDriverManager().install())
     uri = "http://192.168.122.61"
