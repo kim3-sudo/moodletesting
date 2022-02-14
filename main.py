@@ -153,7 +153,7 @@ def rng3(driver, uri, course):
     except:
         print("No tutorial modal")
 
-def rng4(driver, uri):
+def rng4(driver, uri, path):
     """
     Accesses a random user's profile (ID between 2, 1000) and submits Essay.odt on their behalf
 
@@ -194,9 +194,8 @@ def rng4(driver, uri):
         print("Selecting Add submission button")
         driver.find_element(By.XPATH, "//button[contains(text(), 'Add submission')]").click()
     driver.implicitly_wait(0.5)
-    submissiontype = random.choice([True, False]) # True is online text, false is upload
-    #submissiontype = True
-    if submissiontype == True:
+    # True is online text, false is upload
+    if path == True:
         print("Uploading in web editor")
         essay = ""
         with open('./essay.txt', 'r') as f:
@@ -225,14 +224,13 @@ def rng4(driver, uri):
     driver.find_element(By.XPATH, "//input[contains(@name, 'submitbutton')]").click()
     print("Essay submitted")
 
-def simaction(threads, driver, service, options, uri, users, courses, password):
+def simaction(rngaction, rng4action, threads, driver, service, options, uri, users, courses, password):
     try:
+        driver.set_window_size(1366, 1060)
         print("Generating random username and course")
         username, course = generate(users, courses)
         login(uri, driver, username, password)
         driver.implicitly_wait(5)
-        rngaction = random.choice([1,2,3,4,4,3,4,4,3,4,3,3,2,1])
-        #rngaction = 4
         print("RNG action " + str(rngaction))
         if (rngaction == 1):
             rng1(driver, course)
@@ -241,7 +239,8 @@ def simaction(threads, driver, service, options, uri, users, courses, password):
         elif (rngaction == 3):
             rng3(driver, uri, course)
         elif (rngaction == 4):
-            rng4(driver, uri)
+            path = rng4action
+            rng4(driver, uri, rng4action)
         else:
             rng1(driver, course)
         logout(uri, driver)
@@ -249,9 +248,7 @@ def simaction(threads, driver, service, options, uri, users, courses, password):
         driver.quit()
         print("Driver destroyed")
     except:
-        print("Destroying driver")
-        driver.quit()
-        print("Driver destroyed")
+        print("No driver to destroy")
 
 def main():
     print("Initializing options")
@@ -272,6 +269,10 @@ def main():
         print("Initializing threads")
         numthreads = 5
         threads = []
+        print("Initializing path choice")
+        action = random.choice([1,1,1,1,2,2,3,4,4,4,4])
+        rng4action = random.choice([True, False])
+        print("Initializing " + str(numthreads) + " drivers indexed at 0")
         drivers = []
         for i in range(numthreads):
             print("Initializing driver " + str(i))
@@ -279,7 +280,7 @@ def main():
             print("Initialized driver " + str(i))
         print("Initialized thread environment")
         for i in range(numthreads):
-            t = threading.Thread(target = simaction, args = (numthreads, drivers[i], service, options, uri, users, courses, password))
+            t = threading.Thread(target = simaction, args = (action, rng4action, numthreads, drivers[i], service, options, uri, users, courses, password))
             print("Initialized thread")
             t.daemon = True
             threads.append(t)
