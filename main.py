@@ -267,7 +267,7 @@ def main():
     password = "Kenyon5%"
     while True:
         print("Initializing threads")
-        numthreads = 5
+        numthreads = 10
         threads = []
         print("Initializing path choice")
         action = random.choice([1,1,1,1,2,2,3,4,4,4,4])
